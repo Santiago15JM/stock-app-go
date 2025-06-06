@@ -1,0 +1,25 @@
+package service
+
+var ratingWeights = map[string]float32{
+    "strong-buy": 1.6,
+    "buy": 1.5,
+    "top pick": 1.5,
+    "outperform": 1.4,
+    "market outperform": 1.4,
+    "sector outperform": 1.4,
+    "overweight": 1.3,
+    "speculative buy": 1.2,
+    "positive": 1.2,
+    "equal weight": 1.0,
+    "neutral": 1.0,
+    "hold": 0.9,
+    "market perform": 0.9,
+    "in-line": 0.9,
+    "inline": 0.9,
+    "sector perform": 0.9,
+    "unchanged": 0.8,
+    "underperform": 0.6,
+    "sector underperform": 0.6,
+    "underweight": 0.6,
+    "sell": 0.4,
+}
