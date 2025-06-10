@@ -3,7 +3,6 @@ package fetcher
 import (
 	"encoding/json"
 	"errors"
-	"github.com/lib/pq"
 	"log"
 	"net/http"
 	"net/url"
@@ -29,12 +28,7 @@ func Sync() error {
 		}
 		err = db.SaveAllStock(newStocks)
 		if err != nil {
-			var pqErr *pq.Error
-			if errors.As(err, &pqErr) && pqErr.Code == "23505" { //If duplicate key
-				break
-			} else {
-				return err
-			}
+			return err
 		}
 
 		if nextPage == "" {

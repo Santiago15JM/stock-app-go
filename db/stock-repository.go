@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"stock-app/model"
 	"strconv"
 )
@@ -20,7 +19,7 @@ func CreateStockTable() error {
         target_from  FLOAT,
         target_to    FLOAT,
         time         TIMESTAMPTZ,
-        PRIMARY KEY (ticker, time)
+        PRIMARY KEY (ticker)
     )`
 
 	_, err := DB.Exec(query)
@@ -36,6 +35,15 @@ func SaveStock(stock model.Stock) error {
             ticker, company, action, brokerage,
             rating_from, rating_to, target_from, target_to, time
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (ticker) DO UPDATE SET
+			company = EXCLUDED.company,
+			action = EXCLUDED.action,
+			brokerage = EXCLUDED.brokerage,
+			rating_from = EXCLUDED.rating_from,
+			rating_to = EXCLUDED.rating_to,
+			target_from = EXCLUDED.target_from,
+			target_to = EXCLUDED.target_to,
+			time = EXCLUDED.time;
     `
 	_, err := DB.Exec(query,
 		stock.Ticker,
@@ -159,8 +167,6 @@ func GetFilteredSortedStocks(search string, sortingType string, ascending bool) 
 	} else {
 		query += ` DESC`
 	}
-
-	log.Println(ascending) /////
 
 	stocks, err := queryStocks(query)
 	if len(stocks) == 0 {
