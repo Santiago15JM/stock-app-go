@@ -159,9 +159,9 @@ func GetFilteredSortedStocks(search string, sortingType string, ascending bool, 
 
 	if search != "" {
 		query += `WHERE
-  			ticker LIKE $1 or
-			company LIKE $1 or
-			brokerage LIKE $1
+  			ticker ILIKE $1 or
+			company ILIKE $1 or
+			brokerage ILIKE $1
 		`
 		args = append(args, "%"+search+"%")
 	}
