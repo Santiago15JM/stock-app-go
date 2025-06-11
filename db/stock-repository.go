@@ -98,8 +98,8 @@ func parseRows(rows *sql.Rows) ([]model.Stock, error) {
 	return stocks, nil
 }
 
-func queryStocks(query string) ([]model.Stock, error) {
-	rows, err := DB.Query(query)
+func queryStocks(query string, args ...any) ([]model.Stock, error) {
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
@@ -113,14 +113,16 @@ func queryStocks(query string) ([]model.Stock, error) {
 	return stocks, nil
 }
 
-func GetAllStock() ([]model.Stock, error) {
+func GetAllStock(limit int, page int) ([]model.Stock, error) {
+	offset := limit * page
 	query := `
         SELECT ticker, company, action, brokerage,
                rating_from, rating_to, target_from, target_to, time
         FROM stocks
         ORDER BY ticker
+		LIMIT $1 OFFSET $2
     `
-	return queryStocks(query)
+	return queryStocks(query, limit, offset)
 }
 
 func GetRecent(days int) ([]model.Stock, error) {
@@ -139,26 +141,29 @@ func GetStockByTicker(ticker string) (model.Stock, error) {
         SELECT ticker, company, action, brokerage,
                rating_from, rating_to, target_from, target_to, time
 		FROM stocks
-		WHERE ticker = '` + ticker + `'`
-	stock, err := queryStocks(query)
+		WHERE ticker = $1`
+	stock, err := queryStocks(query, ticker)
 	if len(stock) == 0 {
 		return model.Stock{}, fmt.Errorf("couldnt find stock")
 	}
 	return stock[0], err
 }
 
-func GetFilteredSortedStocks(search string, sortingType string, ascending bool) ([]model.Stock, error) {
+func GetFilteredSortedStocks(search string, sortingType string, ascending bool, limit int, page int) ([]model.Stock, error) {
 	query := `
         SELECT ticker, company, action, brokerage,
                rating_from, rating_to, target_from, target_to, time
 		FROM stocks
 		`
+	var args []any
+
 	if search != "" {
 		query += `WHERE
-  			ticker LIKE('%` + search + `%') or
-			company LIKE('%` + search + `%') or
-			brokerage LIKE('%` + search + `%')
+  			ticker LIKE $1 or
+			company LIKE $1 or
+			brokerage LIKE $1
 		`
+		args = append(args, "%"+search+"%")
 	}
 	query += ` ORDER BY ` + sortingType
 
@@ -168,7 +173,14 @@ func GetFilteredSortedStocks(search string, sortingType string, ascending bool) 
 		query += ` DESC`
 	}
 
-	stocks, err := queryStocks(query)
+	query += ` LIMIT $` + strconv.Itoa(len(args)+1)
+	args = append(args, limit)
+
+	offset := limit * page
+	query += ` OFFSET $` + strconv.Itoa(len(args)+1)
+	args = append(args, offset)
+
+	stocks, err := queryStocks(query, args...)
 	if len(stocks) == 0 {
 		return nil, fmt.Errorf("couldnt find stock")
 	}

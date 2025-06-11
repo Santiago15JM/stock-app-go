@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 	"stock-app/fetcher"
 	"stock-app/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +14,7 @@ func RegisterRoutes(r *gin.Engine) {
 	r.GET("/stocks", GetStocks)
 	r.PUT("/sync", SyncWithApi)
 	r.GET("/recommendation", GetRecommendedStock)
-	r.GET("/filtered-stocks", GetQueriedStocks)
+	r.GET("/query-stocks", GetQueriedStocks)
 }
 
 func SyncWithApi(c *gin.Context) {
@@ -27,9 +27,13 @@ func SyncWithApi(c *gin.Context) {
 }
 
 func GetStocks(c *gin.Context) {
-	stocks, err := service.GetAllStock()
+	limitStr := c.DefaultQuery("limit", "50")
+	pageStr := c.DefaultQuery("page", "0")
+	limit, _ := strconv.Atoi(limitStr)
+	page, _ := strconv.Atoi(pageStr)
+
+	stocks, err := service.GetAllStock(limit, page)
 	if err != nil {
-		log.Println("ERROR: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	} else {
 		c.JSON(http.StatusOK, stocks)
@@ -52,9 +56,19 @@ func GetStock(c *gin.Context) {
 }
 
 func GetQueriedStocks(c *gin.Context) {
-	stocks, err := service.GetQueriedStocks(c.Query("search"), c.Query("sortingType"), c.Query("ascending") == "true")
+	limitStr := c.DefaultQuery("limit", "50")
+	pageStr := c.DefaultQuery("page", "0")
+	limit, _ := strconv.Atoi(limitStr)
+	page, _ := strconv.Atoi(pageStr)
+
+	stocks, err := service.GetQueriedStocks(
+		c.Query("search"),
+		c.DefaultQuery("sortingType", "ticker"),
+		c.DefaultQuery("ascending", "true") == "true",
+		limit,
+		page)
 	if err != nil {
-		c.Status(http.StatusNotFound)
+		c.JSON(http.StatusNotFound, err.Error())
 	} else {
 		c.JSON(http.StatusOK, stocks)
 	}
