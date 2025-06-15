@@ -60,10 +60,14 @@ func GetQueriedStocks(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "0")
 	limit, _ := strconv.Atoi(limitStr)
 	page, _ := strconv.Atoi(pageStr)
+	sorting := c.DefaultQuery("sortingType", "TICKER")
+	if sorting == "" {
+		sorting = "TICKER"
+	}
 
 	stocks, err := service.GetQueriedStocks(
 		c.Query("search"),
-		c.DefaultQuery("sortingType", "ticker"),
+		sorting,
 		c.DefaultQuery("ascending", "true") == "true",
 		limit,
 		page)
